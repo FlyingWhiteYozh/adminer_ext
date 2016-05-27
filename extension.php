@@ -3,6 +3,7 @@
 //Bitrix
 //MODx Revo
 //WordPress
+//UMI.CMS
 
 if(!defined('AE_CHECK_ACCESS')) define('AE_CHECK_ACCESS', true);
 ob_start();
@@ -94,6 +95,18 @@ function adminer_object() {
 		return $credentials;
 	}
 
+	function extractCredentialsINI($configPath, $varsMap)
+	{
+		$credentials = array('driver'=>'', 'server'=>'', 'username'=>'', 'password'=>'', 'database'=>'');
+		if(!$config = $this->getConfigFile($configPath))
+			return;
+
+		foreach(parse_ini_file($_SERVER['DOCUMENT_ROOT'] . $configPath) as $name => $value)
+			if(isset($varsMap[$name]))
+				$credentials[$varsMap[$name]] = $value;
+		return $credentials;
+	}
+
 	function extractCredentialsFromBitrix()
 	{
 		return $this->extractCredentialsVars('/bitrix/php_interface/dbconn.php', array(
@@ -123,6 +136,17 @@ function adminer_object() {
 			'DB_USER'		=> 'username',
 			'DB_PASSWORD'	=> 'password',
 			'DB_NAME'		=> 'database'
+			));
+	}
+
+	function extractCredentialsFromUMI()
+	{
+		return $this->extractCredentialsINI('/config.ini', array(
+			'core.type'		=> 'driver',
+			'core.host'		=> 'server',
+			'core.login'	=> 'username',
+			'core.password'	=> 'password',
+			'core.dbname'	=> 'database'
 			));
 	}
 
