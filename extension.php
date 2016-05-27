@@ -2,8 +2,9 @@
 //List of implemented CMS:
 //Bitrix
 //MODx Revo
+//WordPress
 
-if(!is_defined('AE_CHECK_ACCESS')) define('AE_CHECK_ACCESS', true);
+if(!defined('AE_CHECK_ACCESS')) define('AE_CHECK_ACCESS', true);
 ob_start();
 function adminer_object() {
   
@@ -16,6 +17,8 @@ function adminer_object() {
 
   	private function addCredentials($driver, $server, $username, $password, $database)
   	{
+  		if(!$driver) $driver = 'mysql';
+
   		stripos($driver, 'mysql') === 0 && $driver = 'server';
 
   		if(isset($_SESSION['pwds'][$driver][$server][$username])) return;
@@ -51,10 +54,21 @@ function adminer_object() {
 	function extractVars($text)
 	{
 		$vars = array();
-		preg_match_all('{\$([a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*)\s*=\s*([\'"])(.*?)\2\s*;}', $config, $vars, PREG_SET_ORDER); // 1 varname 3 value
-		foreach($vars as &$var)
-			$var[$var[1]] = $var[3];
-		return $vars;			
+		preg_match_all('{\$([a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*)\s*=\s*([\'"])(.*?)\2\s*;}', $text, $vars, PREG_SET_ORDER); // 1 varname 3 value
+		$result = array();
+		foreach($vars as $var)
+			$result[$var[1]] = $var[3];
+		return $result;			
+	}
+
+	function extractConstants($text)
+	{
+		$constants = array();
+		preg_match_all('{define\(\s*([\'"])(\w+?)\1\s*,\s*([\'"])(.*?)\3\s*\);}i', $text, $constants, PREG_SET_ORDER); // 2 varname 4 value
+		$result = array();
+		foreach($constants as $const)
+			$result[$const[2]] = $const[4];
+		return $result;			
 	}
 
 	function extractCredentialsVars($configPath, $varsMap)
@@ -63,8 +77,20 @@ function adminer_object() {
 		if(!$config = $this->getConfigFile($configPath))
 			return;
 		foreach($this->extractVars($config) as $name => $value)
-			if(isset($map[$name]))
-				$credentials[$map[$name]] = $value;
+			if(isset($varsMap[$name]))
+				$credentials[$varsMap[$name]] = $value;
+		return $credentials;
+	}
+
+	function extractCredentialsConstants($configPath, $varsMap)
+	{
+		$credentials = array('driver'=>'', 'server'=>'', 'username'=>'', 'password'=>'', 'database'=>'');
+		if(!$config = $this->getConfigFile($configPath))
+			return;
+
+		foreach($this->extractConstants($config) as $name => $value)
+			if(isset($varsMap[$name]))
+				$credentials[$varsMap[$name]] = $value;
 		return $credentials;
 	}
 
@@ -82,11 +108,21 @@ function adminer_object() {
 	function extractCredentialsFromModx()
 	{
 		return $this->extractCredentialsVars('/core/config/config.inc.php', array(
-			'database_type'	=> 'driver',
+			'database_type'		=> 'driver',
 			'database_server'	=> 'server',
-			'database_user'	=> 'username',
-			'database_password'=> 'password',
-			'dbase'	=> 'database'
+			'database_user'		=> 'username',
+			'database_password'	=> 'password',
+			'dbase'				=> 'database'
+			));
+	}
+
+	function extractCredentialsFromWP()
+	{
+		return $this->extractCredentialsConstants('/wp-config.php', array(
+			'DB_HOST'		=> 'server',
+			'DB_USER'		=> 'username',
+			'DB_PASSWORD'	=> 'password',
+			'DB_NAME'		=> 'database'
 			));
 	}
 
