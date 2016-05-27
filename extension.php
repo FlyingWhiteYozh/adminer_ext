@@ -7,6 +7,9 @@
 //Joomla
 //Drupal
 //Simpla
+//WebAsyst
+//Amiro
+//OpenCart
 
 if(!defined('AE_CHECK_ACCESS')) define('AE_CHECK_ACCESS', true);
 ob_start();
@@ -175,13 +178,35 @@ function adminer_object() {
 			));
 	}
 
-	function extractCredentialsFromWP()
+	function extractCredentialsFromWebAsyst()
+	{
+		return $this->extractCredentialsArray('/wa-config/db.php', array(
+			'type'		=> 'driver',
+			'host'		=> 'server',
+			'user'		=> 'username',
+			'password'	=> 'password',
+			'database'	=> 'database'
+			));
+	}
+
+	function extractCredentialsFromWordPress()
 	{
 		return $this->extractCredentialsConstants('/wp-config.php', array(
 			'DB_HOST'		=> 'server',
 			'DB_USER'		=> 'username',
 			'DB_PASSWORD'	=> 'password',
 			'DB_NAME'		=> 'database'
+			));
+	}
+
+	function extractCredentialsFromOpenCart()
+	{
+		return $this->extractCredentialsConstants('/config.php', array(
+			'DB_DRIVER'		=> 'driver',
+			'DB_HOSTNAME'	=> 'server',
+			'DB_USERNAME'	=> 'username',
+			'DB_PASSWORD'	=> 'password',
+			'DB_DATABASE'	=> 'database'
 			));
 	}
 
@@ -195,6 +220,7 @@ function adminer_object() {
 			'core.dbname'	=> 'database'
 			));
 	}
+
 	function extractCredentialsFromSimpla()
 	{
 		return $this->extractCredentialsINI('/config/config.php', array(
@@ -202,6 +228,16 @@ function adminer_object() {
 			'db_user'		=> 'username',
 			'db_password'	=> 'password',
 			'db_name'		=> 'database'
+			));
+	}
+
+	function extractCredentialsFromAmiro()
+	{
+		return $this->extractCredentialsINI('/_local/config.ini.php', array(
+			'DB_Host'		=> 'server',
+			'DB_User'		=> 'username',
+			'DB_Password'	=> 'password',
+			'DB_Database'		=> 'database'
 			));
 	}
 
