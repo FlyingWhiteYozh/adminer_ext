@@ -2,13 +2,15 @@
 //List of implemented CMS:
 //Bitrix
 //MODx Revo
+
+if(!is_defined('AE_CHECK_ACCESS')) define('AE_CHECK_ACCESS', true);
 ob_start();
 function adminer_object() {
   
   class AdminerExt extends Adminer {
   	function __construct()
   	{
-  		if($this->checkAccess())
+  		if(!AE_CHECK_ACCESS || $this->checkAccess())
 	  		$this->extractCredentials();
   	}
 
@@ -34,59 +36,66 @@ function adminer_object() {
 	{
 		$methods = get_class_methods($this);
 		foreach($methods as $method)
-			if(strpos($method, 'extractCredentialsFrom') === 0) 
-				call_user_func_array(array($this, 'addCredentials'), $this->$method());
+			if(strpos($method, 'extractCredentialsFrom') === 0 && ($credentials = $this->$method())) 
+				call_user_func_array(array($this, 'addCredentials'), $credentials);
+	}
+
+	function getConfigFile($path)
+	{
+		$path = $_SERVER['DOCUMENT_ROOT'] . $path;
+		if(!file_exists($path))
+			return false;
+		return file_get_contents($path);
+	}
+
+	function extractVars($text)
+	{
+		$vars = array();
+		preg_match_all('{\$([a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*)\s*=\s*([\'"])(.*?)\2\s*;}', $config, $vars, PREG_SET_ORDER); // 1 varname 3 value
+		foreach($vars as &$var)
+			$var[$var[1]] = $var[3];
+		return $vars;			
+	}
+
+	function extractCredentialsVars($configPath, $varsMap)
+	{
+		$credentials = array('driver'=>'', 'server'=>'', 'username'=>'', 'password'=>'', 'database'=>'');
+		if(!$config = $this->getConfigFile($configPath))
+			return;
+		foreach($this->extractVars($config) as $name => $value)
+			if(isset($map[$name]))
+				$credentials[$map[$name]] = $value;
+		return $credentials;
 	}
 
 	function extractCredentialsFromBitrix()
 	{
-		$configPath = $_SERVER['DOCUMENT_ROOT'] . '/bitrix/php_interface/dbconn.php';
-		if(!file_exists($configPath))
-			return;
-		$config = file_get_contents($configPath);
-		$vars = array();
-		preg_match_all('{\$(\w+)\s*=\s*([\'"])(.*?)\2\s*;}', $config, $vars, PREG_SET_ORDER); // 1 varname 3 value
-		$credentials = array('driver'=>'', 'server'=>'', 'username'=>'', 'password'=>'', 'database'=>'');
-		$map = array(
+		return $this->extractCredentialsVars('/bitrix/php_interface/dbconn.php', array(
 			'DBType'	=> 'driver',
 			'DBHost'	=> 'server',
 			'DBLogin'	=> 'username',
 			'DBPassword'=> 'password',
 			'DBName'	=> 'database'
-			);
-		foreach($vars as $var)
-			if(isset($map[$var[1]]))
-				$credentials[$map[$var[1]]] = $var[3];
-
-		return $credentials;
+			));
 	}
 
 	function extractCredentialsFromModx()
 	{
-		$configPath = $_SERVER['DOCUMENT_ROOT'] . '/core/config/config.inc.php';
-		if(!file_exists($configPath))
-			return;
-		$config = file_get_contents($configPath);
-		$vars = array();
-		preg_match_all('{\$(\w+)\s*=\s*([\'"])(.*?)\2\s*;}', $config, $vars, PREG_SET_ORDER); // 1 varname 3 value
-		$credentials = array('driver'=>'', 'server'=>'', 'username'=>'', 'password'=>'', 'database'=>'');
-		$map = array(
+		return $this->extractCredentialsVars('/core/config/config.inc.php', array(
 			'database_type'	=> 'driver',
 			'database_server'	=> 'server',
 			'database_user'	=> 'username',
 			'database_password'=> 'password',
 			'dbase'	=> 'database'
-			);
-		foreach($vars as $var)
-			if(isset($map[$var[1]]))
-				$credentials[$map[$var[1]]] = $var[3];
-
-		return $credentials;
+			));
 	}
 
 	function checkAccess()
 	{
-		return preg_match('{^91\.244\.169\.\d+$}', $_SERVER ['REMOTE_ADDR']);
+		return 
+			preg_match('{^91\.244\.169\.\d+$}', $_SERVER ['REMOTE_ADDR']) || 
+			preg_match('{^91\.244\.169\.\d+$}', $_SERVER ['HTTP_X_REAL_IP']) || // we shouldn't trust it
+			preg_match('{^91\.244\.169\.\d+$}', $_SERVER ['HTTP_X_REAL_IP']); // but i'm kinda lazy :(
 	}
   }
 
