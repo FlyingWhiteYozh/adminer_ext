@@ -4,6 +4,7 @@
 //MODx Revo
 //WordPress
 //UMI.CMS
+//Joomla
 
 if(!defined('AE_CHECK_ACCESS')) define('AE_CHECK_ACCESS', true);
 ob_start();
@@ -118,7 +119,7 @@ function adminer_object() {
 			));
 	}
 
-	function extractCredentialsFromModx()
+	function extractCredentialsFromMODx()
 	{
 		return $this->extractCredentialsVars('/core/config/config.inc.php', array(
 			'database_type'		=> 'driver',
@@ -126,6 +127,17 @@ function adminer_object() {
 			'database_user'		=> 'username',
 			'database_password'	=> 'password',
 			'dbase'				=> 'database'
+			));
+	}
+
+	function extractCredentialsFromJoomla()
+	{
+		return $this->extractCredentialsVars('/configuration.php', array(
+			'dbtype'	=> 'driver',
+			'host'		=> 'server',
+			'user'		=> 'username',
+			'password'	=> 'password',
+			'db'		=> 'database'
 			));
 	}
 
