@@ -5,6 +5,8 @@
 //WordPress
 //UMI.CMS
 //Joomla
+//Drupal
+//Simpla
 
 if(!defined('AE_CHECK_ACCESS')) define('AE_CHECK_ACCESS', true);
 ob_start();
@@ -63,6 +65,16 @@ function adminer_object() {
 		return $result;			
 	}
 
+	function extractArray($text)
+	{
+		$constants = array();
+		preg_match_all('{([\'"])(\w+?)\1\s*=>\s*([\'"])(.*?)\3}i', $text, $constants, PREG_SET_ORDER); // 2 varname 4 value
+		$result = array();
+		foreach($constants as $const)
+			$result[$const[2]] = $const[4];
+		return $result;			
+	}
+
 	function extractConstants($text)
 	{
 		$constants = array();
@@ -79,6 +91,17 @@ function adminer_object() {
 		if(!$config = $this->getConfigFile($configPath))
 			return;
 		foreach($this->extractVars($config) as $name => $value)
+			if(isset($varsMap[$name]))
+				$credentials[$varsMap[$name]] = $value;
+		return $credentials;
+	}
+
+	function extractCredentialsArray($configPath, $varsMap)
+	{
+		$credentials = array('driver'=>'', 'server'=>'', 'username'=>'', 'password'=>'', 'database'=>'');
+		if(!$config = $this->getConfigFile($configPath))
+			return;
+		foreach($this->extractArray($config) as $name => $value)
 			if(isset($varsMap[$name]))
 				$credentials[$varsMap[$name]] = $value;
 		return $credentials;
@@ -141,6 +164,17 @@ function adminer_object() {
 			));
 	}
 
+	function extractCredentialsFromDrupal()
+	{
+		return $this->extractCredentialsArray('/sites/default/settings.php', array(
+			'driver'	=> 'driver',
+			'host'		=> 'server',
+			'username'	=> 'username',
+			'password'	=> 'password',
+			'database'	=> 'database'
+			));
+	}
+
 	function extractCredentialsFromWP()
 	{
 		return $this->extractCredentialsConstants('/wp-config.php', array(
@@ -159,6 +193,15 @@ function adminer_object() {
 			'core.login'	=> 'username',
 			'core.password'	=> 'password',
 			'core.dbname'	=> 'database'
+			));
+	}
+	function extractCredentialsFromSimpla()
+	{
+		return $this->extractCredentialsINI('/config/config.php', array(
+			'db_server'		=> 'server',
+			'db_user'		=> 'username',
+			'db_password'	=> 'password',
+			'db_name'		=> 'database'
 			));
 	}
 
