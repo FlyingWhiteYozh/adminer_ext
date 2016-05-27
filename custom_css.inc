@@ -1,0 +1,1 @@
+<link rel="stylesheet" type="text/css" href="',h(preg_replace("~\\?.*~","",ME))."?file=adminer.css&amp;version=4.2.5-dev",'">
