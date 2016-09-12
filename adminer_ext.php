@@ -1,8 +1,10 @@
 <?php
+define('DISABLE_CSRF_PROTECTION', false);
 $adminer = $_SERVER['argv'][1] ?? 'adminer-in.php';
 $adminer = file_get_contents($adminer);
 
-$adminer = str_replace('<div id="help"', file_get_contents('custom_css.inc') . '<div id="help"', $adminer);
+// $adminer = str_replace('<div id="help"', file_get_contents('custom_css.inc') . '<div id="help"', $adminer);
+DISABLE_CSRF_PROTECTION && $adminer = str_replace('verify_token(){', 'verify_token(){return true;', $adminer);
 
 $compiled = fopen('adminer.php', 'w');
 
@@ -14,7 +16,7 @@ fwrite($compiled, $extension);
 fwrite($compiled, $adminer);
 fclose($compiled);
 
-$adminer = file_get_contents('adminer.php');
+/*$adminer = file_get_contents('adminer.php');
 $adminer = gzcompress($adminer);
 $start = '<?php
 $fp = fopen(__FILE__, \'r\');
@@ -24,7 +26,7 @@ fclose($fp);
 eval(\'?>\'.$payload);
 __halt_compiler();';
 
-file_put_contents('adminer.php', $start . $adminer);
+file_put_contents('adminer.php', $start . $adminer);*/
 
 function lzw_compress($string) {
 	// compression

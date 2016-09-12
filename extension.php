@@ -12,7 +12,7 @@
 //OpenCart
 
 if(!defined('AE_CHECK_ACCESS')) define('AE_CHECK_ACCESS', true);
-ob_start();
+// ob_start();
 function adminer_object() {
   
   class AdminerExt extends Adminer {
@@ -241,17 +241,25 @@ function adminer_object() {
 			));
 	}
 
+	function extractCredentialsFromCustom()
+	{
+		return $this->extractCredentialsArray('/lib/settings.inc.php', array(
+			'dbHost'=> 'server',
+			'dbUser'=> 'username',
+			'dbPass'=> 'password',
+			'dbName'=> 'database'
+			));
+	}
+
 	function checkAccess()
 	{
 		return 
 			preg_match('{^91\.244\.169\.\d+$}', $_SERVER ['REMOTE_ADDR']) || 
-			preg_match('{^91\.244\.169\.\d+$}', $_SERVER ['HTTP_X_REAL_IP']) || // we shouldn't trust it
-			preg_match('{^91\.244\.169\.\d+$}', $_SERVER ['HTTP_X_REAL_IP']); // but i'm kinda lazy :(
+			preg_match('{^91\.244\.169\.\d+$}', $_SERVER ['HTTP_X_REAL_IP']); // we shouldn't trust it but i'm kinda lazy :(
 	}
   }
 
   return new AdminerExt;
 }
-// end-tag is necessary there
+// end-tag is necessary there. BUT NO SYMBOLS AFTER IT
 ?>
-
